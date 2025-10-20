@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+
+# Environment and secrets
+.env
+*.key
+*.pem
+*.crt
+
+# Data and logs
+data/
+logs/
+*.db
+*.db-journal
+audit.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Uploads and temporary files
+uploads/
+tmp/
+temp/
+*.tmp
+
+# PHI - Never commit real patient data
+*_phi.json
+*_phi.pdf
+*_phi.csv
