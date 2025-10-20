@@ -3,7 +3,7 @@ Tests for data extraction module
 """
 
 import pytest
-from src.core.extraction import DataExtractor, extract_patient_data
+from core.extraction import DataExtractor, extract_patient_data
 
 
 def test_patient_name_extraction():

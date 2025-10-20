@@ -9,7 +9,7 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime
 from pydantic import BaseModel, Field
 
-from .schema import CMS1500Claim, ICDIndicator, ServiceLineInfo
+from cms1500.schema import CMS1500Claim, ICDIndicator, ServiceLineInfo
 
 logger = logging.getLogger(__name__)
 

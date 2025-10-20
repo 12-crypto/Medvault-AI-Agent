@@ -21,7 +21,7 @@ try:
 except ImportError:
     PDFPLUMBER_AVAILABLE = False
 
-from .ocr import OCREngine, extract_text_from_file
+from core.ocr import OCREngine, extract_text_from_file
 
 logger = logging.getLogger(__name__)
 

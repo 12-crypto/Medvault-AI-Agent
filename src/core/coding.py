@@ -8,7 +8,7 @@ import logging
 from typing import List, Dict, Any, Optional, Tuple
 from pydantic import BaseModel, Field
 
-from .extraction import DiagnosisCode, ProcedureCode
+from core.extraction import DiagnosisCode, ProcedureCode
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +22,7 @@ class CodeSuggestion(BaseModel):
     confidence: float = Field(ge=0.0, le=1.0)
     source_text: Optional[str] = None  # Text snippet that triggered suggestion
     alternatives: List[str] = Field(default_factory=list)  # Alternative codes
+    metadata: Optional[Dict[str, Any]] = Field(default_factory=dict)  # Additional metadata (e.g., diagnosis pointers)
 
 
 class CodeMismatch(BaseModel):
@@ -130,8 +131,8 @@ class MedicalCodingAssistant:
     def _llm_suggest_codes(self, clinical_notes: str) -> Tuple[List[CodeSuggestion], List[CodeSuggestion]]:
         """Use LLM to suggest codes from clinical notes"""
         
-        from ..llm.ollama import OllamaClient
-        from ..llm.prompts.code_mapping import CODE_MAPPING_PROMPT
+        from llm.ollama import OllamaClient
+        from llm.prompts.code_mapping import CODE_MAPPING_PROMPT
         
         client = OllamaClient()
         

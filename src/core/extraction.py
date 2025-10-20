@@ -369,12 +369,12 @@ class DataExtractor:
     def _llm_extract(self, text: str) -> Dict[str, Any]:
         """Use LLM to extract structured data"""
         
-        from ..llm.ollama import OllamaClient
+        from llm.ollama import OllamaClient
         
         client = OllamaClient()
         
         # Load extraction prompt
-        from ..llm.prompts.extract_notes import EXTRACTION_PROMPT
+        from llm.prompts.extract_notes import EXTRACTION_PROMPT
         
         prompt = EXTRACTION_PROMPT.format(text=text)
         

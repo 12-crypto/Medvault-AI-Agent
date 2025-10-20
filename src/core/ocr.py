@@ -250,7 +250,7 @@ class OCREngine:
         logger.debug(f"Processing page {page_num} with Llama Vision")
         
         # Import here to avoid circular dependency
-        from ..llm.ollama import OllamaClient
+        from llm.ollama import OllamaClient
         
         client = OllamaClient()
         

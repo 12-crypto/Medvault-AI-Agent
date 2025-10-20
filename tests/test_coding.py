@@ -3,8 +3,8 @@ Tests for medical coding assistant
 """
 
 import pytest
-from src.core.coding import MedicalCodingAssistant, CodeSuggestion, suggest_codes
-from src.core.extraction import DiagnosisCode, ProcedureCode
+from core.coding import MedicalCodingAssistant, CodeSuggestion, suggest_codes
+from core.extraction import DiagnosisCode, ProcedureCode
 
 
 def test_diagnosis_letter_assignment():

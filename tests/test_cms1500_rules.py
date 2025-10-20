@@ -4,8 +4,8 @@ Tests for CMS-1500 validation rules
 
 import pytest
 from datetime import datetime
-from src.cms1500.schema import CMS1500Claim, ServiceLineInfo, ICDIndicator
-from src.cms1500.rules import CMS1500Validator, validate_claim
+from cms1500.schema import CMS1500Claim, ServiceLineInfo, ICDIndicator
+from cms1500.rules import CMS1500Validator, validate_claim
 
 
 @pytest.fixture

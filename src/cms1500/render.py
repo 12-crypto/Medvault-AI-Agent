@@ -4,7 +4,7 @@ Renders claims for UI preview and export.
 """
 
 from typing import Dict, Any, List
-from .schema import CMS1500Claim
+from cms1500.schema import CMS1500Claim
 
 
 class CMS1500Renderer:

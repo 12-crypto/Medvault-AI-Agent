@@ -7,9 +7,9 @@ import logging
 from typing import Dict, Any, Optional
 from datetime import datetime
 
-from .schema import CMS1500Claim, ServiceLineInfo, ICDIndicator
-from ..core.extraction import ExtractedData, PatientInfo, InsuranceInfo, ProviderInfo
-from ..core.coding import CodingResult
+from cms1500.schema import CMS1500Claim, ServiceLineInfo, ICDIndicator
+from core.extraction import ExtractedData, PatientInfo, InsuranceInfo, ProviderInfo
+from core.coding import CodingResult
 
 logger = logging.getLogger(__name__)
 
