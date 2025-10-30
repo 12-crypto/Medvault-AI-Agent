@@ -86,6 +86,3 @@ pytest -q
 
 See the top-level `LICENSE` file for license terms.
 
----
-
-If anything in this README should be expanded (screenshots, env details, or CI steps), tell me what you want and I’ll add it.
