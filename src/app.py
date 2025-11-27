@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 # Import application modules
 from core.parsing import parse_document
-from core.extraction import DataExtractor
+from core.extraction import DataExtractor, format_extracted_data_for_qa
 from core.coding import MedicalCodingAssistant
 from cms1500.generator import CMS1500Generator
 from cms1500.rules import CMS1500Validator
@@ -30,6 +30,7 @@ from security.auth import get_auth_manager, Role
 from security.audit import get_audit_logger
 from security.policy import get_policy_manager, ConsentType
 from llm.ollama import OllamaClient, verify_ollama
+from llm.prompts.qa_prompt import QA_SYSTEM_PROMPT, format_qa_prompt
 
 # Page configuration
 st.set_page_config(
@@ -383,19 +384,19 @@ def coding_section():
                     pointers = proc.metadata['diagnosis_pointers']
                     st.write(f"**Diagnosis Pointers:** {', '.join(pointers)}")
     
-    # Validation issues
-    if coding.mismatches:
-        st.markdown("#### ⚠️ Validation Issues")
-        for mismatch in coding.mismatches:
-            if mismatch.severity == "error":
-                st.error(f"**Error:** {mismatch.message}")
-            elif mismatch.severity == "warning":
-                st.warning(f"**Warning:** {mismatch.message}")
-            else:
-                st.info(f"**Info:** {mismatch.message}")
-            
-            if mismatch.suggestion:
-                st.write(f"💡 {mismatch.suggestion}")
+    # Validation issues - Hidden per user request
+    # if coding.mismatches:
+    #     st.markdown("#### ⚠️ Validation Issues")
+    #     for mismatch in coding.mismatches:
+    #         if mismatch.severity == "error":
+    #             st.error(f"**Error:** {mismatch.message}")
+    #         elif mismatch.severity == "warning":
+    #             st.warning(f"**Warning:** {mismatch.message}")
+    #         else:
+    #             st.info(f"**Info:** {mismatch.message}")
+    #         
+    #         if mismatch.suggestion:
+    #             st.write(f"💡 {mismatch.suggestion}")
 
 
 def cms1500_section():
@@ -426,29 +427,29 @@ def cms1500_section():
     if st.session_state.claim:
         claim = st.session_state.claim
         
-        # Validate
-        validator = CMS1500Validator()
-        validation_result = validator.validate(claim)
+        # Validate - Hidden per user request
+        # validator = CMS1500Validator()
+        # validation_result = validator.validate(claim)
         
-        # Show validation status
-        if validation_result.valid:
-            st.success(f"✅ Claim is valid ({validation_result.warnings_count} warnings)")
-        else:
-            st.error(f"❌ Claim has {validation_result.errors_count} errors")
+        # Show validation status - Hidden per user request
+        # if validation_result.valid:
+        #     st.success(f"✅ Claim is valid ({validation_result.warnings_count} warnings)")
+        # else:
+        #     st.error(f"❌ Claim has {validation_result.errors_count} errors")
         
-        # Display validation messages
-        if validation_result.messages:
-            with st.expander(f"📝 Validation Messages ({len(validation_result.messages)})"):
-                for msg in validation_result.messages:
-                    if msg.severity == "error":
-                        st.error(f"**Field {msg.field}:** {msg.message}")
-                    elif msg.severity == "warning":
-                        st.warning(f"**Field {msg.field}:** {msg.message}")
-                    else:
-                        st.info(f"**Field {msg.field}:** {msg.message}")
-                    
-                    if msg.suggestion:
-                        st.write(f"💡 {msg.suggestion}")
+        # Display validation messages - Hidden per user request
+        # if validation_result.messages:
+        #     with st.expander(f"📝 Validation Messages ({len(validation_result.messages)})"):
+        #         for msg in validation_result.messages:
+        #             if msg.severity == "error":
+        #                 st.error(f"**Field {msg.field}:** {msg.message}")
+        #             elif msg.severity == "warning":
+        #                 st.warning(f"**Field {msg.field}:** {msg.message}")
+        #             else:
+        #                 st.info(f"**Field {msg.field}:** {msg.message}")
+        #             
+        #             if msg.suggestion:
+        #                 st.write(f"💡 {msg.suggestion}")
         
         # Render claim
         renderer = CMS1500Renderer()
@@ -483,14 +484,31 @@ def cms1500_section():
         col1, col2 = st.columns(2)
         
         with col1:
-            if st.button("📥 Export as JSON"):
-                json_data = claim.model_dump_json(indent=2)
+            json_data = claim.model_dump_json(indent=2)
+            st.download_button(
+                "📥 Download JSON",
+                json_data,
+                file_name=f"claim_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+                mime="application/json",
+                use_container_width=True
+            )
+        
+        with col2:
+            try:
+                from cms1500.pdf_generator import generate_cms1500_pdf
+                pdf_data = generate_cms1500_pdf(claim)
                 st.download_button(
-                    "Download JSON",
-                    json_data,
-                    file_name=f"claim_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
-                    mime="application/json"
+                    "📄 Download PDF Form",
+                    pdf_data,
+                    file_name=f"cms1500_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
+                    mime="application/pdf",
+                    use_container_width=True
                 )
+            except ImportError:
+                st.error("PDF generation requires reportlab. Install with: pip install reportlab")
+            except Exception as e:
+                st.error(f"Error generating PDF: {str(e)}")
+                logger.error(f"PDF generation error: {e}", exc_info=True)
 
 
 def chat_interface():
@@ -516,9 +534,63 @@ def chat_interface():
                 try:
                     client = OllamaClient()
                     
-                    # Build context
-                    messages = [{"role": msg["role"], "content": msg["content"]} 
-                               for msg in st.session_state.chat_history]
+                    # Build context with extracted data if available
+                    messages = []
+                    
+                    # Add system prompt with extracted data context
+                    if st.session_state.extracted_data:
+                        # Format extracted data for context
+                        extracted_context = format_extracted_data_for_qa(st.session_state.extracted_data)
+                        
+                        # Add claim information if available
+                        if st.session_state.claim:
+                            claim_data = st.session_state.claim.model_dump()
+                            extracted_context += "\n\n=== CMS-1500 CLAIM DATA ===\n"
+                            extracted_context += f"Claim generated with {len(claim_data.get('diagnoses', []))} diagnoses and {len(claim_data.get('service_lines', []))} service lines.\n"
+                            if 'totals' in claim_data:
+                                totals = claim_data['totals']
+                                if 'total_charge' in totals:
+                                    extracted_context += f"Total Charge: ${totals['total_charge']:,.2f}\n"
+                        
+                        # Format the prompt with context
+                        contextual_prompt = format_qa_prompt(prompt, extracted_context)
+                        
+                        # Add system message with context (only on first message)
+                        if len(st.session_state.chat_history) == 1:  # Only the current user message
+                            messages.append({
+                                "role": "system",
+                                "content": QA_SYSTEM_PROMPT + "\n\nEXTRACTED MEDICAL DATA (available for all questions):\n" + extracted_context
+                            })
+                            messages.append({
+                                "role": "user",
+                                "content": prompt
+                            })
+                        else:
+                            # For subsequent messages, include conversation history
+                            # Build conversation history (excluding the current prompt)
+                            for msg in st.session_state.chat_history[:-1]:
+                                messages.append({"role": msg["role"], "content": msg["content"]})
+                            
+                            # Add the contextual user question
+                            messages.append({
+                                "role": "user",
+                                "content": contextual_prompt
+                            })
+                    else:
+                        # No extracted data - use regular chat
+                        # Build messages from history (excluding the current prompt which we'll add)
+                        for msg in st.session_state.chat_history[:-1]:  # Exclude the last message (current prompt)
+                            messages.append({"role": msg["role"], "content": msg["content"]})
+                        
+                        # Add system message explaining no data is available (only if first message)
+                        if len(st.session_state.chat_history) == 1:
+                            messages.insert(0, {
+                                "role": "system",
+                                "content": "You are a medical data assistant. No medical document has been processed yet. Please inform the user that they need to upload and process a medical document first to answer questions about specific medical data."
+                            })
+                        
+                        # Add current user prompt
+                        messages.append({"role": "user", "content": prompt})
                     
                     result = client.chat(messages=messages)
                     response = result.get("message", {}).get("content", "Sorry, I couldn't generate a response.")

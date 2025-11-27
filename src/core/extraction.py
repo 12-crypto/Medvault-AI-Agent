@@ -462,6 +462,178 @@ class DataExtractor:
         return date_str  # Return as-is if can't parse
 
 
+def format_extracted_data_for_qa(extracted_data: ExtractedData) -> str:
+    """
+    Format ExtractedData into a readable string for Q&A context.
+    
+    Args:
+        extracted_data: ExtractedData object to format
+        
+    Returns:
+        Formatted string containing all extracted information
+    """
+    lines = []
+    
+    # Patient Information
+    lines.append("=== PATIENT INFORMATION ===")
+    if extracted_data.patient:
+        patient = extracted_data.patient
+        if patient.first_name or patient.last_name:
+            name_parts = [p for p in [patient.first_name, patient.middle_name, patient.last_name] if p]
+            lines.append(f"Name: {' '.join(name_parts)}")
+        if patient.dob:
+            lines.append(f"Date of Birth: {patient.dob}")
+        if patient.sex:
+            lines.append(f"Sex: {patient.sex}")
+        if patient.address:
+            address_parts = [patient.address]
+            if patient.city:
+                address_parts.append(patient.city)
+            if patient.state:
+                address_parts.append(patient.state)
+            if patient.zip_code:
+                address_parts.append(patient.zip_code)
+            lines.append(f"Address: {', '.join(address_parts)}")
+        if patient.phone:
+            lines.append(f"Phone: {patient.phone}")
+        if patient.marital_status:
+            lines.append(f"Marital Status: {patient.marital_status}")
+        if patient.employment_status:
+            lines.append(f"Employment Status: {patient.employment_status}")
+    else:
+        lines.append("No patient information available")
+    
+    lines.append("")
+    
+    # Insurance Information
+    lines.append("=== INSURANCE INFORMATION ===")
+    if extracted_data.insurance:
+        insurance = extracted_data.insurance
+        if insurance.insurance_name:
+            lines.append(f"Insurance Name: {insurance.insurance_name}")
+        if insurance.plan_name:
+            lines.append(f"Plan Name: {insurance.plan_name}")
+        if insurance.policy_number:
+            lines.append(f"Policy Number: {insurance.policy_number}")
+        if insurance.group_number:
+            lines.append(f"Group Number: {insurance.group_number}")
+        if insurance.subscriber_name:
+            lines.append(f"Subscriber Name: {insurance.subscriber_name}")
+        if insurance.subscriber_relationship:
+            lines.append(f"Subscriber Relationship: {insurance.subscriber_relationship}")
+        if insurance.subscriber_dob:
+            lines.append(f"Subscriber DOB: {insurance.subscriber_dob}")
+        if insurance.payer_id:
+            lines.append(f"Payer ID: {insurance.payer_id}")
+    else:
+        lines.append("No insurance information available")
+    
+    lines.append("")
+    
+    # Provider Information
+    lines.append("=== PROVIDER INFORMATION ===")
+    if extracted_data.provider:
+        provider = extracted_data.provider
+        if provider.provider_name:
+            lines.append(f"Provider Name: {provider.provider_name}")
+        if provider.provider_npi:
+            lines.append(f"Provider NPI: {provider.provider_npi}")
+        if provider.facility_name:
+            lines.append(f"Facility Name: {provider.facility_name}")
+        if provider.facility_npi:
+            lines.append(f"Facility NPI: {provider.facility_npi}")
+        if provider.facility_address:
+            address_parts = [provider.facility_address]
+            if provider.facility_city:
+                address_parts.append(provider.facility_city)
+            if provider.facility_state:
+                address_parts.append(provider.facility_state)
+            if provider.facility_zip:
+                address_parts.append(provider.facility_zip)
+            lines.append(f"Facility Address: {', '.join(address_parts)}")
+        if provider.phone:
+            lines.append(f"Phone: {provider.phone}")
+        if provider.tax_id:
+            lines.append(f"Tax ID: {provider.tax_id}")
+    else:
+        lines.append("No provider information available")
+    
+    lines.append("")
+    
+    # Diagnoses
+    lines.append("=== DIAGNOSES ===")
+    if extracted_data.diagnoses:
+        for i, dx in enumerate(extracted_data.diagnoses, 1):
+            dx_line = f"{i}. {dx.code}"
+            if dx.description:
+                dx_line += f" - {dx.description}"
+            if dx.letter:
+                dx_line += f" (Letter: {dx.letter})"
+            if dx.confidence < 1.0:
+                dx_line += f" [Confidence: {dx.confidence:.0%}]"
+            lines.append(dx_line)
+    else:
+        lines.append("No diagnoses found")
+    
+    lines.append("")
+    
+    # Procedures
+    lines.append("=== PROCEDURES ===")
+    if extracted_data.procedures:
+        for i, proc in enumerate(extracted_data.procedures, 1):
+            proc_line = f"{i}. {proc.code}"
+            if proc.description:
+                proc_line += f" - {proc.description}"
+            if proc.modifier:
+                proc_line += f" (Modifier: {proc.modifier})"
+            if proc.units > 1:
+                proc_line += f" (Units: {proc.units})"
+            if proc.charge:
+                proc_line += f" - Charge: ${proc.charge:,.2f}"
+            if proc.date_of_service:
+                proc_line += f" (Date: {proc.date_of_service})"
+            if proc.diagnosis_pointers:
+                proc_line += f" [Diagnosis Pointers: {', '.join(proc.diagnosis_pointers)}]"
+            if proc.confidence < 1.0:
+                proc_line += f" [Confidence: {proc.confidence:.0%}]"
+            lines.append(proc_line)
+    else:
+        lines.append("No procedures found")
+    
+    lines.append("")
+    
+    # Dates
+    lines.append("=== IMPORTANT DATES ===")
+    if extracted_data.dates:
+        for key, value in extracted_data.dates.items():
+            lines.append(f"{key.replace('_', ' ').title()}: {value}")
+    else:
+        lines.append("No dates extracted")
+    
+    lines.append("")
+    
+    # Amounts
+    lines.append("=== FINANCIAL INFORMATION ===")
+    if extracted_data.amounts:
+        for key, value in extracted_data.amounts.items():
+            lines.append(f"{key.replace('_', ' ').title()}: ${value:,.2f}")
+    else:
+        lines.append("No financial amounts extracted")
+    
+    lines.append("")
+    
+    # Metadata
+    if extracted_data.metadata:
+        lines.append("=== METADATA ===")
+        for key, value in extracted_data.metadata.items():
+            lines.append(f"{key}: {value}")
+        lines.append("")
+    
+    lines.append(f"Extraction Confidence: {extracted_data.extraction_confidence:.0%}")
+    
+    return "\n".join(lines)
+
+
 def extract_patient_data(text: str, use_llm: bool = True) -> Dict[str, Any]:
     """
     Convenience function to extract patient data from text.
