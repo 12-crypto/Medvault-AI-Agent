@@ -167,7 +167,7 @@ class DataExtractor:
                 
             except Exception as e:
                 logger.warning(f"LLM extraction failed, using rule-based only: {e}")
-        
+         
         # Calculate overall confidence
         confidence = self._calculate_confidence(patient, insurance, provider, diagnoses, procedures)
         

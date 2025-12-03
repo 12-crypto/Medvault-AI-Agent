@@ -14,6 +14,14 @@ if [ ! -f .env ]; then
     echo "Run 'make bootstrap' to generate .env with secure keys."
 fi
 
+# Check and start Ollama if needed
+echo "Checking Ollama service..."
+if ! curl -s http://localhost:11434/api/tags > /dev/null 2>&1; then
+    echo "Ollama is not running. Starting Ollama..."
+    bash scripts/start_ollama.sh
+    echo ""
+fi
+
 # Set Python path
 export PYTHONPATH="${PYTHONPATH}:$(pwd)"
 

@@ -1,4 +1,4 @@
-.PHONY: help venv install clean test lint run check-ollama bootstrap
+.PHONY: help venv install clean test lint run check-ollama start-ollama bootstrap
 
 PYTHON := python3
 VENV := venv
@@ -12,10 +12,11 @@ help:
 	@echo "make venv          - Create Python virtual environment"
 	@echo "make install       - Install dependencies"
 	@echo "make bootstrap     - Complete first-time setup (venv + install + check-ollama)"
-	@echo "make run           - Run Streamlit application"
+	@echo "make start-ollama  - Start Ollama service"
+	@echo "make check-ollama  - Verify Ollama installation and models"
+	@echo "make run           - Run Streamlit application (auto-starts Ollama)"
 	@echo "make test          - Run test suite"
 	@echo "make lint          - Run linters and type checking"
-	@echo "make check-ollama  - Verify Ollama installation and models"
 	@echo "make clean         - Remove generated files and venv"
 
 venv:
@@ -39,6 +40,10 @@ check-ollama:
 	@command -v ollama >/dev/null 2>&1 || { echo "ERROR: Ollama not found. Please install from https://ollama.ai"; exit 1; }
 	@ollama list | grep -q "llama3.2" || { echo "WARNING: llama3.2 model not found. Run: ollama pull llama3.2"; }
 	@echo "Ollama check complete"
+
+start-ollama:
+	@echo "Starting Ollama service..."
+	@bash scripts/start_ollama.sh
 
 run:
 	@echo "Starting MediVault AI Agent..."

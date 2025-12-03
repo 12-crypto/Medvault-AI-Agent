@@ -106,6 +106,37 @@ def login_page():
     
     st.info("🔒 **HIPAA-Compliant Local Processing** - All data processed locally with no external APIs")
     
+    # Inject CSS/JS to disable password manager autocomplete
+    st.markdown("""
+    <script>
+    (function() {
+        function disablePasswordManager() {
+            const passwordInputs = document.querySelectorAll('input[type="password"]');
+            passwordInputs.forEach(function(input) {
+                input.setAttribute('autocomplete', 'new-password');
+                input.setAttribute('data-form-type', 'other');
+                input.setAttribute('data-lpignore', 'true');
+                // Prevent Google Password Manager from detecting this field
+                input.setAttribute('data-1p-ignore', 'true');
+            });
+        }
+        // Run immediately and after a delay to catch dynamically created inputs
+        disablePasswordManager();
+        setTimeout(disablePasswordManager, 100);
+        setTimeout(disablePasswordManager, 500);
+        
+        // Also run when Streamlit reruns
+        const observer = new MutationObserver(disablePasswordManager);
+        observer.observe(document.body, { childList: true, subtree: true });
+    })();
+    </script>
+    <style>
+    input[type="password"] {
+        -webkit-autofill: off !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
     col1, col2, col3 = st.columns([1, 2, 1])
     
     with col2:
