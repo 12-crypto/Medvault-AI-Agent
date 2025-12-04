@@ -325,9 +325,19 @@ class DataExtractor:
             code = match.group(1)
             modifier = match.group(2) if match.group(2) else None
             
+            # Try to find charge associated with this code
+            charge = None
+            # Look for pattern like "99214: $185.00" or "99214 - $185.00"
+            charge_pattern = rf'{code}[:\-\s]+\$?([\d,]+\.?\d{{0,2}})'
+            charge_match = re.search(charge_pattern, text)
+            if charge_match:
+                charge_str = charge_match.group(1).replace(',', '')
+                charge = float(charge_str)
+            
             codes.append(ProcedureCode(
                 code=code,
                 modifier=modifier,
+                charge=charge,
                 confidence=0.7
             ))
         

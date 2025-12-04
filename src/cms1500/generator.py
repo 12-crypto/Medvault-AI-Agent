@@ -69,8 +69,8 @@ class CMS1500Generator:
         # Map diagnoses (Item 21)
         if coding_result:
             claim_data.update(self._map_diagnoses(coding_result))
-            # Map service lines (Item 24)
-            claim_data.update(self._map_service_lines(coding_result))
+            # Map service lines (Item 24) - pass extracted_data for fallback totals
+            claim_data.update(self._map_service_lines(coding_result, extracted_data))
         
         # Apply overrides
         claim_data.update(overrides)
@@ -223,7 +223,7 @@ class CMS1500Generator:
         
         return data
     
-    def _map_service_lines(self, coding_result: CodingResult) -> Dict[str, Any]:
+    def _map_service_lines(self, coding_result: CodingResult, extracted_data: Optional[ExtractedData] = None) -> Dict[str, Any]:
         """Map procedure codes to Item 24 service lines"""
         
         service_lines = []
@@ -238,19 +238,36 @@ class CMS1500Generator:
             cpt_code = code_parts[0]
             modifier = code_parts[1] if len(code_parts) > 1 else None
             
+            # Determine charge from procedure metadata if available
+            charge_val = None
+            if proc.metadata and 'charge' in proc.metadata:
+                try:
+                    charge_val = float(proc.metadata.get('charge') or 0.0)
+                except Exception:
+                    charge_val = 0.0
+
+            # Determine date and place from metadata when available
+            date_from = proc.metadata.get('date_of_service') if (proc.metadata and 'date_of_service' in proc.metadata) else None
+            place_of_service = proc.metadata.get('place_of_service') if (proc.metadata and 'place_of_service' in proc.metadata) else '11'
+
             line = ServiceLineInfo(
-                date_from=self._format_date_for_cms(datetime.now()),  # Should come from extracted data
-                place_of_service="11",  # Office (default)
+                date_from=date_from if date_from else self._format_date_for_cms(datetime.now()),
+                place_of_service=place_of_service,
                 cpt_hcpcs=cpt_code,
                 modifier1=modifier,
                 diagnosis_pointer=diagnosis_pointer,
-                charges=100.00,  # Should come from extracted data
+                charges=charge_val if charge_val is not None else 0.0,
                 days_or_units=1
             )
             service_lines.append(line)
         
         # Calculate total
         total_charge = sum(line.charges * line.days_or_units for line in service_lines)
+
+        # Fallback: if no per-line charges found, use extracted total if available
+        if (not service_lines) or all((line.charges == 0 or line.charges is None) for line in service_lines):
+            if extracted_data and getattr(extracted_data, 'amounts', None):
+                total_charge = extracted_data.amounts.get('total_charge', total_charge)
         
         return {
             'service_lines': service_lines,

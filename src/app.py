@@ -292,6 +292,11 @@ def document_upload_section(settings):
         if st.button("🔍 Process Document", use_container_width=True):
             with st.spinner("Processing document..."):
                 try:
+                    # Clear previous session data when processing new file
+                    st.session_state.extracted_data = None
+                    st.session_state.coding_result = None
+                    st.session_state.claim = None
+                    
                     # Save temp file
                     with tempfile.NamedTemporaryFile(delete=False, suffix=Path(uploaded_file.name).suffix) as tmp:
                         tmp.write(uploaded_file.getvalue())
@@ -312,7 +317,8 @@ def document_upload_section(settings):
                     coding_result = coding_assistant.suggest_codes(
                         parsed['text'],
                         extracted.diagnoses,
-                        extracted.procedures
+                        extracted.procedures,
+                        extraction_confidence=extracted.extraction_confidence
                     )
                     
                     # Store in session
