@@ -162,7 +162,10 @@ class DataExtractor:
                 # LLM may find additional codes
                 if llm_result.get("diagnoses"):
                     diagnoses.extend(llm_result["diagnoses"])
-                if llm_result.get("procedures"):
+                # Only extend procedures from the LLM if no procedures were extracted by rules
+                # This prevents LLM-added procedure codes from appearing when the document
+                # already contains explicit procedure lines.
+                if llm_result.get("procedures") and not procedures:
                     procedures.extend(llm_result["procedures"])
                 
             except Exception as e:
@@ -333,11 +336,25 @@ class DataExtractor:
             if charge_match:
                 charge_str = charge_match.group(1).replace(',', '')
                 charge = float(charge_str)
-            
+            # Try to capture a description on the same line after the code
+            description = None
+            # get the rest of the line after the match
+            line_rest = text[match.end():].split('\n', 1)[0]
+            if line_rest:
+                # strip common separators and numbering
+                desc = re.sub(r'^[\s\-:\.)]+', '', line_rest).strip()
+                # If the description starts with a hyphen or digits (like list numbers), strip them
+                desc = re.sub(r'^[0-9\.\)\-\s]+', '', desc).strip()
+                # Only accept as description if contains letters
+                if re.search(r'[A-Za-z]', desc):
+                    # Limit description length
+                    description = desc.strip()
+
             codes.append(ProcedureCode(
                 code=code,
                 modifier=modifier,
                 charge=charge,
+                description=description,
                 confidence=0.7
             ))
         
