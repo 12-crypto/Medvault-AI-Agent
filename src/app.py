@@ -492,6 +492,10 @@ def cms1500_section():
         renderer = CMS1500Renderer()
         rendered = renderer.render_for_display(claim)
         
+        # Fetch total charge (both formatted string and numeric value)
+        total_charge_formatted = rendered['totals']['total_charge']  # Formatted: "$XXX.XX"
+        total_charge_numeric = claim.total_charge  # Numeric: float value
+        
         # Display claim fields
         tabs = st.tabs(["Overview", "Patient", "Insurance", "Diagnoses", "Services", "Provider"])
         
@@ -581,13 +585,22 @@ def chat_interface():
                         
                         # Add claim information if available
                         if st.session_state.claim:
-                            claim_data = st.session_state.claim.model_dump()
+                            claim = st.session_state.claim
+                            claim_data = claim.model_dump()
                             extracted_context += "\n\n=== CMS-1500 CLAIM DATA ===\n"
-                            extracted_context += f"Claim generated with {len(claim_data.get('diagnoses', []))} diagnoses and {len(claim_data.get('service_lines', []))} service lines.\n"
-                            if 'totals' in claim_data:
-                                totals = claim_data['totals']
-                                if 'total_charge' in totals:
-                                    extracted_context += f"Total Charge: ${totals['total_charge']:,.2f}\n"
+                            extracted_context += f"Claim generated with {len(claim_data.get('service_lines', []))} service lines.\n\n"
+                            
+                            # Add service line details with charges
+                            if claim.service_lines:
+                                extracted_context += "Service Lines:\n"
+                                for idx, line in enumerate(claim.service_lines, start=1):
+                                    line_total = line.charges * line.days_or_units
+                                    extracted_context += f"  Line {idx}: {line.cpt_hcpcs} - ${line.charges:.2f} x {line.days_or_units} = ${line_total:.2f}\n"
+                                extracted_context += "\n"
+                            
+                            # Add total charge (use the actual claim.total_charge value)
+                            total_charge = claim.total_charge
+                            extracted_context += f"Total Charge: ${total_charge:.2f}\n"
                         
                         # Format the prompt with context
                         contextual_prompt = format_qa_prompt(prompt, extracted_context)
