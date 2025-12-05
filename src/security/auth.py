@@ -49,8 +49,8 @@ class AuthManager:
     
     def _create_default_user(self):
         """Create default admin user"""
-        # Default: admin/admin (CHANGE IN PRODUCTION)
-        self.create_user("admin", "admin", [Role.ADMIN])
+        # Default: sanjyot_sbu123/sanjyot@120525
+        self.create_user("sanjyot_sbu123", "sanjyot@120525", [Role.ADMIN])
     
     def hash_password(self, password: str) -> str:
         """Hash password with salt"""

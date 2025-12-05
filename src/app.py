@@ -167,8 +167,8 @@ def login_page():
                 st.error("Invalid credentials")
         
         with st.expander("ℹ️ Default Credentials"):
-            st.write("Username: `admin`")
-            st.write("Password: `admin`")
+            st.write("Username: `sanjyot_sbu123`")
+            st.write("Password: `sanjyot@120525`")
             st.warning("**Change default credentials in production!**")
 
 
