@@ -7,6 +7,8 @@
 **A HIPAA-compliant, local-first AI assistant for medical claims automation**
 
 MediVault AI Agent is an intelligent medical document processing system that extracts patient data, suggests medical codes, generates CMS-1500 claim forms, and answers questions about medical records using local AI models. All processing happens on your machine—no data leaves your system.
+![Uploading image.png…]()
+
 
 ---
 
